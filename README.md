@@ -96,7 +96,34 @@ Email: test@vet.com
 Contraseña: test123
 ```
 
-## 📁 Estructura del Proyecto
+## � Capturas de Pantalla
+
+### Pantalla de Login
+Interfaz moderna con sistema de pestañas para iniciar sesión y registrarse.
+
+![Login](capturas/login.png)
+
+### Login Exitoso
+Confirmación visual del inicio de sesión exitoso antes de redirigir al dashboard.
+
+![Login Exitoso](capturas/login-exitoso.png)
+
+### Formulario de Registro
+Formulario completo con validaciones en tiempo real y hints informativos.
+
+![Registro](capturas/registro.png)
+
+### Dashboard Principal
+Vista con KPIs, tabla de clientes y gestión completa CRUD.
+
+![Dashboard](capturas/dashboard.png)
+
+### Modal de Crear Cliente
+Formulario detallado con validaciones de teléfono, edad, peso y email.
+
+![Modal Cliente](capturas/modal-cliente.png)
+
+## �📁 Estructura del Proyecto
 
 ```
 veterinaria/
@@ -148,9 +175,9 @@ Recomendado: Vercel, Netlify, Cloudflare Pages
 
 ## 👨‍💻 Autor
 
-**[Tu Nombre]**
-- GitHub: [@tu-usuario](https://github.com/tu-usuario)
-- LinkedIn: [tu-perfil](https://linkedin.com/in/tu-perfil)
+**José Manuel García Vega**
+- GitHub: [@josemanuelmanb875x](https://github.com/josemanuelmanb875x)
+- Email: josemanuelmanb875x@gmail.com
 
 ---
 
