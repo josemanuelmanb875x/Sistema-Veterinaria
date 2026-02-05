@@ -1,0 +1,580 @@
+---
+---
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Dashboard - Veterinaria</title>
+  </head>
+  <body style="font-family:Segoe UI, Tahoma, sans-serif;background:linear-gradient(120deg,#022c22,#042444);color:#e6fff6;min-height:100vh;margin:0;">
+    
+    <!-- NAVBAR -->
+    <nav style="display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;background:rgba(0,0,0,0.25);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,0.1);">
+      <div style="font-size:1.25rem;font-weight:600;">
+        <span style="color:#94f7d0;">🏥</span> <span id="vetName">Veterinaria</span>
+      </div>
+      <div>
+        <button id="btnLogout" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.4);padding:0.5rem 1rem;border-radius:6px;cursor:pointer;transition:all 0.2s;">
+          Cerrar sesión
+        </button>
+      </div>
+    </nav>
+
+    <main style="padding:2rem;max-width:1400px;margin:0 auto;">
+      
+      <!-- KPI CARDS -->
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;">
+        <div style="background:rgba(5,150,105,0.15);backdrop-filter:blur(10px);padding:1.5rem;border-radius:12px;border:1px solid rgba(16,185,129,0.3);">
+          <div style="font-size:0.875rem;color:#94f7d0;margin-bottom:0.5rem;">Total Clientes</div>
+          <div style="font-size:2rem;font-weight:700;" id="total">0</div>
+        </div>
+        <div style="background:rgba(59,130,246,0.15);backdrop-filter:blur(10px);padding:1.5rem;border-radius:12px;border:1px solid rgba(96,165,250,0.3);">
+          <div style="font-size:0.875rem;color:#bfdbfe;margin-bottom:0.5rem;">🐕 Perros</div>
+          <div style="font-size:2rem;font-weight:700;" id="perros">0</div>
+        </div>
+        <div style="background:rgba(236,72,153,0.15);backdrop-filter:blur(10px);padding:1.5rem;border-radius:12px;border:1px solid rgba(244,114,182,0.3);">
+          <div style="font-size:0.875rem;color:#fbcfe8;margin-bottom:0.5rem;">🐱 Gatos</div>
+          <div style="font-size:2rem;font-weight:700;" id="gatos">0</div>
+        </div>
+      </section>
+
+      <!-- TABLA DE CLIENTES -->
+      <section style="background:rgba(0,0,0,0.2);backdrop-filter:blur(10px);border-radius:12px;padding:1.5rem;border:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+          <h2 style="margin:0;font-size:1.5rem;color:#94f7d0;">Clientes</h2>
+          <button id="openCreate" style="background:rgba(16,185,129,0.3);color:#94f7d0;border:1px solid rgba(16,185,129,0.5);padding:0.6rem 1.2rem;border-radius:8px;cursor:pointer;font-weight:600;transition:all 0.2s;">
+            ➕ Nuevo Cliente
+          </button>
+        </div>
+        
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;min-width:900px;">
+            <thead>
+              <tr style="border-bottom:2px solid rgba(148,247,208,0.3);">
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Dueño</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Teléfono</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Email</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Mascota</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Especie</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Raza</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Edad</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Peso (kg)</th>
+                <th style="text-align:left;padding:0.75rem;color:#94f7d0;font-weight:600;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="clientesTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- MODAL -->
+    <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);justify-content:center;align-items:center;z-index:1000;">
+      <div style="background:#062b2b;padding:2rem;border-radius:16px;width:90%;max-width:600px;border:1px solid rgba(148,247,208,0.3);max-height:90vh;overflow-y:auto;">
+        <h3 id="modalTitle" style="margin:0 0 1.5rem 0;color:#94f7d0;font-size:1.5rem;">Crear Cliente</h3>
+        
+        <form id="clienteForm">
+          <!-- Información del Dueño -->
+          <div style="margin-bottom:1.5rem;">
+            <h4 style="color:#94f7d0;font-size:1rem;margin-bottom:0.75rem;border-bottom:1px solid rgba(148,247,208,0.2);padding-bottom:0.5rem;">👤 Información del Dueño</h4>
+            
+            <div style="margin-bottom:1rem;">
+              <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Nombre completo *</label>
+              <input name="nombre_dueno" required style="width:100%;padding:0.6rem;border-radius:6px;border:1px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+              <div>
+                <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Teléfono <span style="color:#94a3b8;">(10 dígitos)</span></label>
+                <input 
+                  id="telefono_dueno"
+                  name="telefono_dueno" 
+                  type="tel"
+                  maxlength="10"
+                  placeholder="8331234567"
+                  style="width:100%;padding:0.6rem;border-radius:6px;border:2px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;transition:border-color 0.2s;" 
+                />
+                <small id="telError" style="color:#fca5a5;font-size:0.75rem;display:none;"></small>
+              </div>
+              <div>
+                <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Email</label>
+                <input 
+                  id="email_dueno"
+                  name="email_dueno" 
+                  type="email"
+                  placeholder="cliente@mail.com"
+                  style="width:100%;padding:0.6rem;border-radius:6px;border:2px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;transition:border-color 0.2s;" 
+                />
+              </div>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+              <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Dirección</label>
+              <input name="direccion_dueno" style="width:100%;padding:0.6rem;border-radius:6px;border:1px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;" />
+            </div>
+          </div>
+
+          <!-- Información de la Mascota -->
+          <div style="margin-bottom:1.5rem;">
+            <h4 style="color:#94f7d0;font-size:1rem;margin-bottom:0.75rem;border-bottom:1px solid rgba(148,247,208,0.2);padding-bottom:0.5rem;">🐾 Información de la Mascota</h4>
+            
+            <div style="margin-bottom:1rem;">
+              <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Nombre de la mascota *</label>
+              <input name="nombre_mascota" required style="width:100%;padding:0.6rem;border-radius:6px;border:1px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+              <div>
+                <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Especie *</label>
+                <select 
+                  id="especie"
+                  name="especie" 
+                  required
+                  style="width:100%;padding:0.6rem;border-radius:6px;border:2px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;cursor:pointer;"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Perro">🐕 Perro</option>
+                  <option value="Gato">🐱 Gato</option>
+                  <option value="Ave">🦜 Ave</option>
+                  <option value="Reptil">🦎 Reptil</option>
+                  <option value="Conejo">🐰 Conejo</option>
+                  <option value="Roedor">🐹 Roedor</option>
+                  <option value="Otro">🐾 Otro</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Raza</label>
+                <input 
+                  name="raza"
+                  placeholder="Ej: Labrador"
+                  style="width:100%;padding:0.6rem;border-radius:6px;border:2px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;" 
+                />
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+              <div>
+                <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Edad (años) <span style="color:#94a3b8;">(0-50)</span></label>
+                <input 
+                  id="edad"
+                  name="edad" 
+                  type="number" 
+                  min="0" 
+                  max="50" 
+                  step="0.1" 
+                  placeholder="Ej: 3.5"
+                  style="width:100%;padding:0.6rem;border-radius:6px;border:2px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;transition:border-color 0.2s;" 
+                />
+                <small id="edadError" style="color:#fca5a5;font-size:0.75rem;display:none;"></small>
+              </div>
+              <div>
+                <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Peso (kg) <span style="color:#94a3b8;">(0.1-200)</span></label>
+                <input 
+                  id="peso"
+                  name="peso" 
+                  type="number" 
+                  min="0.1" 
+                  max="200" 
+                  step="0.1" 
+                  placeholder="Ej: 15.5"
+                  style="width:100%;padding:0.6rem;border-radius:6px;border:2px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;transition:border-color 0.2s;" 
+                />
+                <small id="pesoError" style="color:#fca5a5;font-size:0.75rem;display:none;"></small>
+              </div>
+            </div>
+
+            <div>
+              <label style="display:block;margin-bottom:0.25rem;color:#94f7d0;font-size:0.875rem;">Notas adicionales</label>
+              <textarea name="notas" rows="3" placeholder="Alergias, medicamentos, observaciones..." style="width:100%;padding:0.6rem;border-radius:6px;border:1px solid rgba(148,247,208,0.3);background:rgba(0,0,0,0.3);color:#e6fff6;font-size:0.95rem;resize:vertical;"></textarea>
+            </div>
+          </div>
+
+          <!-- Botones -->
+          <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+            <button type="button" id="closeModal" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.4);padding:0.6rem 1.5rem;border-radius:6px;cursor:pointer;font-weight:600;">
+              Cancelar
+            </button>
+            <button type="submit" style="background:rgba(16,185,129,0.3);color:#94f7d0;border:1px solid rgba(16,185,129,0.5);padding:0.6rem 1.5rem;border-radius:6px;cursor:pointer;font-weight:600;">
+              💾 Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script is:inline>
+      // ============= SERVICIOS INLINE =============
+      
+      // Auth Service
+      function getToken() {
+        return localStorage.getItem('token');
+      }
+
+      function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('vet_name');
+      }
+
+      // Clientes Service
+      function authHeaders() {
+        const token = getToken();
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      }
+
+      async function fetchClientes() {
+        const res = await fetch('http://127.0.0.1:8000/clientes', {
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) throw new Error('Error fetching clientes');
+        return res.json();
+      }
+
+      async function createCliente(cliente) {
+        const res = await fetch('http://127.0.0.1:8000/clientes', {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(cliente),
+        });
+        if (!res.ok) {
+          const error = await res.text();
+          throw new Error('Error creating cliente: ' + error);
+        }
+        return res.json();
+      }
+
+      async function updateCliente(id, cliente) {
+        const res = await fetch(`http://127.0.0.1:8000/clientes/${id}`, {
+          method: 'PUT',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(cliente),
+        });
+        if (!res.ok) {
+          const error = await res.text();
+          throw new Error('Error updating cliente: ' + error);
+        }
+        return res.json();
+      }
+
+      async function deleteCliente(id) {
+        const res = await fetch(`http://127.0.0.1:8000/clientes/${id}`, {
+          method: 'DELETE',
+          headers: { ...authHeaders() },
+        });
+        if (!res.ok) {
+          const error = await res.text();
+          throw new Error('Error deleting cliente: ' + error);
+        }
+        return res.ok;
+      }
+
+      // ============= LÓGICA DEL DASHBOARD =============
+
+      // Verificar autenticación
+      const token = getToken();
+      if (!token) location.href = '/';
+
+      // Referencias DOM
+      const vetNameEl = document.getElementById('vetName');
+      const totalEl = document.getElementById('total');
+      const perrosEl = document.getElementById('perros');
+      const gatosEl = document.getElementById('gatos');
+      const tbody = document.getElementById('clientesTbody');
+      const modal = document.getElementById('modal');
+      const clienteForm = document.getElementById('clienteForm');
+      const openCreate = document.getElementById('openCreate');
+      const closeModalBtn = document.getElementById('closeModal');
+      const modalTitle = document.getElementById('modalTitle');
+
+      let editingId = null;
+      let clientes = [];
+
+      // Referencias para validación
+      const telefonoDuenoInput = document.getElementById('telefono_dueno');
+      const telError = document.getElementById('telError');
+      const edadInput = document.getElementById('edad');
+      const edadError = document.getElementById('edadError');
+      const pesoInput = document.getElementById('peso');
+      const pesoError = document.getElementById('pesoError');
+
+      // Validación de teléfono en tiempo real
+      if (telefonoDuenoInput) {
+        telefonoDuenoInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+          
+          if (e.target.value.length > 0 && e.target.value.length < 10) {
+            telError.textContent = `Faltan ${10 - e.target.value.length} dígitos`;
+            telError.style.display = 'block';
+            e.target.style.borderColor = '#fca5a5';
+          } else if (e.target.value.length === 10) {
+            telError.style.display = 'none';
+            e.target.style.borderColor = '#10b981';
+          } else if (e.target.value.length === 0) {
+            telError.style.display = 'none';
+            e.target.style.borderColor = 'rgba(148,247,208,0.3)';
+          }
+        });
+      }
+
+      // Validación de edad
+      if (edadInput) {
+        edadInput.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (val && (val < 0 || val > 50)) {
+            edadError.textContent = 'La edad debe estar entre 0 y 50 años';
+            edadError.style.display = 'block';
+            e.target.style.borderColor = '#fca5a5';
+          } else if (val >= 0 && val <= 50) {
+            edadError.style.display = 'none';
+            e.target.style.borderColor = '#10b981';
+          } else {
+            edadError.style.display = 'none';
+            e.target.style.borderColor = 'rgba(148,247,208,0.3)';
+          }
+        });
+      }
+
+      // Validación de peso
+      if (pesoInput) {
+        pesoInput.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (val && (val < 0.1 || val > 200)) {
+            pesoError.textContent = 'El peso debe estar entre 0.1 y 200 kg';
+            pesoError.style.display = 'block';
+            e.target.style.borderColor = '#fca5a5';
+          } else if (val >= 0.1 && val <= 200) {
+            pesoError.style.display = 'none';
+            e.target.style.borderColor = '#10b981';
+          } else {
+            pesoError.style.display = 'none';
+            e.target.style.borderColor = 'rgba(148,247,208,0.3)';
+          }
+        });
+      }
+
+      // Cargar clientes
+      async function load() {
+        try {
+          clientes = await fetchClientes();
+          renderTable();
+          calculateKPIs();
+        } catch (err) {
+          console.error('Error cargando clientes:', err);
+          if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+            alert('Sesión expirada. Por favor inicia sesión nuevamente.');
+            logout();
+            location.href = '/';
+          }
+        }
+      }
+
+      // Renderizar tabla
+      function renderTable() {
+        tbody.innerHTML = '';
+        
+        if (clientes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#94f7d0;opacity:0.6;">No hay clientes registrados. ¡Añade el primero!</td></tr>';
+          return;
+        }
+
+        clientes.forEach(c => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid rgba(148,247,208,0.1)';
+          tr.style.transition = 'background 0.2s';
+          tr.onmouseenter = () => tr.style.background = 'rgba(255,255,255,0.03)';
+          tr.onmouseleave = () => tr.style.background = 'transparent';
+          
+          // Badge de especie con colores dinámicos
+          const especieLower = (c.especie || '').toLowerCase();
+          let badgeColor = 'rgba(148,163,184,0.3)';
+          let badgeBorder = 'rgba(148,163,184,0.5)';
+          
+          if (especieLower.includes('perro')) {
+            badgeColor = 'rgba(59,130,246,0.2)';
+            badgeBorder = 'rgba(96,165,250,0.5)';
+          } else if (especieLower.includes('gato')) {
+            badgeColor = 'rgba(236,72,153,0.2)';
+            badgeBorder = 'rgba(244,114,182,0.5)';
+          }
+
+          tr.innerHTML = `
+            <td style="padding:0.75rem;">${c.nombre_dueno || '-'}</td>
+            <td style="padding:0.75rem;">${c.telefono_dueno || '-'}</td>
+            <td style="padding:0.75rem;font-size:0.875rem;">${c.email_dueno || '-'}</td>
+            <td style="padding:0.75rem;font-weight:600;">${c.nombre_mascota || '-'}</td>
+            <td style="padding:0.75rem;">
+              <span style="display:inline-block;padding:0.25rem 0.75rem;border-radius:12px;background:${badgeColor};border:1px solid ${badgeBorder};font-size:0.875rem;">
+                ${c.especie || '-'}
+              </span>
+            </td>
+            <td style="padding:0.75rem;">${c.raza || '-'}</td>
+            <td style="padding:0.75rem;">${c.edad != null ? c.edad + ' años' : '-'}</td>
+            <td style="padding:0.75rem;">${c.peso != null ? c.peso + ' kg' : '-'}</td>
+            <td style="padding:0.75rem;">
+              <button data-id="${c.id}" class="edit" style="background:rgba(59,130,246,0.2);color:#93c5fd;border:1px solid rgba(59,130,246,0.4);padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;margin-right:0.5rem;font-size:0.875rem;">
+                ✏️ Editar
+              </button>
+              <button data-id="${c.id}" class="del" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.4);padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.875rem;">
+                🗑️ Eliminar
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Agregar event listeners
+        tbody.querySelectorAll('.edit').forEach(b => b.addEventListener('click', onEdit));
+        tbody.querySelectorAll('.del').forEach(b => b.addEventListener('click', onDelete));
+      }
+
+      // Calcular KPIs
+      function calculateKPIs() {
+        totalEl.textContent = clientes.length;
+        const perros = clientes.filter(c => (c.especie || '').toLowerCase().includes('perro')).length;
+        const gatos = clientes.filter(c => (c.especie || '').toLowerCase().includes('gato')).length;
+        perrosEl.textContent = String(perros);
+        gatosEl.textContent = String(gatos);
+      }
+
+      // Abrir modal para crear
+      function openModalForCreate() {
+        editingId = null;
+        modalTitle.textContent = '➕ Crear Nuevo Cliente';
+        clienteForm.reset();
+        modal.style.display = 'flex';
+      }
+
+      // Cerrar modal
+      function closeModalFunc() {
+        modal.style.display = 'none';
+        editingId = null;
+        clienteForm.reset();
+      }
+
+      // Editar cliente
+      async function onEdit(e) {
+        const id = Number(e.target.dataset.id);
+        const c = clientes.find(x => x.id === id);
+        if (!c) return;
+        
+        editingId = id;
+        modalTitle.textContent = '✏️ Editar Cliente';
+        
+        // Llenar formulario con datos existentes
+        const fields = ['nombre_dueno', 'telefono_dueno', 'email_dueno', 'direccion_dueno', 
+                       'nombre_mascota', 'especie', 'raza', 'edad', 'peso', 'notas'];
+        
+        fields.forEach(field => {
+          const input = clienteForm.elements.namedItem(field);
+          if (input && c[field] != null) {
+            input.value = c[field];
+          }
+        });
+        
+        modal.style.display = 'flex';
+      }
+
+      // Eliminar cliente
+      async function onDelete(e) {
+        const id = Number(e.target.dataset.id);
+        const cliente = clientes.find(c => c.id === id);
+        
+        if (!confirm(`¿Eliminar a ${cliente?.nombre_mascota || 'este cliente'}?`)) return;
+        
+        try {
+          await deleteCliente(id);
+          await load();
+        } catch (err) {
+          console.error('Error eliminando cliente:', err);
+          alert('Error al eliminar el cliente');
+        }
+      }
+
+      // Submit formulario
+      clienteForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Validar teléfono si tiene valor
+        if (telefonoDuenoInput.value && telefonoDuenoInput.value.length !== 10) {
+          telError.textContent = 'El teléfono debe tener 10 dígitos';
+          telError.style.display = 'block';
+          telefonoDuenoInput.focus();
+          return;
+        }
+        
+        // Validar edad si tiene valor
+        const edad = edadInput.value ? parseFloat(edadInput.value) : null;
+        if (edad !== null && (edad < 0 || edad > 50)) {
+          edadError.textContent = 'La edad debe estar entre 0 y 50 años';
+          edadError.style.display = 'block';
+          edadInput.focus();
+          return;
+        }
+        
+        // Validar peso si tiene valor
+        const peso = pesoInput.value ? parseFloat(pesoInput.value) : null;
+        if (peso !== null && (peso < 0.1 || peso > 200)) {
+          pesoError.textContent = 'El peso debe estar entre 0.1 y 200 kg';
+          pesoError.style.display = 'block';
+          pesoInput.focus();
+          return;
+        }
+        
+        const fd = new FormData(clienteForm);
+        const data = Object.fromEntries(fd);
+        
+        // Convertir números y manejar campos opcionales
+        data.edad = data.edad ? Number(data.edad) : null;
+        data.peso = data.peso ? Number(data.peso) : null;
+        
+        // Limpiar campos vacíos
+        Object.keys(data).forEach(key => {
+          if (data[key] === '') data[key] = null;
+        });
+
+        try {
+          if (editingId) {
+            await updateCliente(editingId, data);
+          } else {
+            await createCliente(data);
+          }
+          closeModalFunc();
+          await load();
+        } catch (err) {
+          console.error('Error guardando cliente:', err);
+          alert('Error al guardar el cliente. Por favor verifica los datos.');
+        }
+      });
+
+      // Event listeners
+      openCreate.addEventListener('click', openModalForCreate);
+      closeModalBtn.addEventListener('click', closeModalFunc);
+      document.getElementById('btnLogout').addEventListener('click', () => {
+        logout();
+        location.href = '/';
+      });
+
+      // Obtener nombre de veterinaria
+      async function loadVet() {
+        try {
+          const res = await fetch('http://127.0.0.1:8000/veterinarias/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (res.ok) {
+            const vet = await res.json();
+            vetNameEl.textContent = vet.nombre;
+            localStorage.setItem('vet_name', vet.nombre);
+          }
+        } catch (err) {
+          console.error('Error cargando veterinaria:', err);
+        }
+      }
+
+      // Inicializar inmediatamente
+      (async function init() {
+        await loadVet();
+        await load();
+      })();
+    </script>
+  </body>
+</html>

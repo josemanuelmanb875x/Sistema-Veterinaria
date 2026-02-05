@@ -1,0 +1,361 @@
+---
+// src/pages/index.astro
+---
+
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Acceso Veterinaria</title>
+</head>
+<body>
+    <div class="main-container">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+
+        <div class="glass-card">
+            <div class="tabs">
+                <button id="tab-login" class="tab active" onclick="switchTab('login')">Iniciar Sesión</button>
+                <button id="tab-register" class="tab" onclick="switchTab('register')">Registrarse</button>
+            </div>
+
+            <div id="form-login" class="form-section">
+                <h2>Bienvenido de nuevo</h2>
+                <p class="subtitle">Gestiona tus pacientes de forma segura</p>
+                
+                <form onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="login-email" placeholder="admin@vet.com" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="login-pass" placeholder="••••••••" required />
+                    </div>
+                    <button type="submit" class="btn-primary">ENTRAR AL SISTEMA</button>
+                </form>
+            </div>
+
+            <div id="form-register" class="form-section hidden">
+                <h2>Crea tu cuenta</h2>
+                <p class="subtitle">Registra tu veterinaria en segundos</p>
+                
+                <form onsubmit="handleRegister(event)">
+                    <div class="input-group">
+                        <label>Nombre de la Clínica</label>
+                        <input type="text" id="reg-nombre" placeholder="Ej. Vet Patitas" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Teléfono</label>
+                        <input type="text" id="reg-tel" placeholder="833 123 4567" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Dirección</label>
+                        <input type="text" id="reg-dir" placeholder="Av. Hidalgo #123" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="reg-email" placeholder="admin@vet.com" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="reg-pass" placeholder="Crea una contraseña segura" required />
+                    </div>
+                    <button type="submit" class="btn-secondary">REGISTRAR CLÍNICA</button>
+                </form>
+            </div>
+
+            <p id="status-msg" class="status-msg"></p>
+        </div>
+    </div>
+
+    <script is:inline>
+        // URL del Backend (Aseguramos que apunte al puerto 8000)
+        const API_URL = "http://127.0.0.1:8000";
+
+        function switchTab(mode) {
+            // Ocultar errores previos
+            document.getElementById('status-msg').innerText = '';
+            document.getElementById('status-msg').className = 'status-msg';
+
+            if (mode === 'login') {
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('form-register').classList.add('hidden');
+                document.getElementById('tab-login').classList.add('active');
+                document.getElementById('tab-register').classList.remove('active');
+            } else {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-register').classList.remove('hidden');
+                document.getElementById('tab-login').classList.remove('active');
+                document.getElementById('tab-register').classList.add('active');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Registrando...";
+            btn.disabled = true;
+
+            const data = {
+                nombre: document.getElementById('reg-nombre').value,
+                telefono: document.getElementById('reg-tel').value,
+                direccion: document.getElementById('reg-dir').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-pass').value
+            };
+
+            try {
+                // Probamos la ruta que generó el agente (/veterinarias/registro)
+                const res = await fetch(`${API_URL}/veterinarias/registro`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    showMsg("¡Registro exitoso! Ahora inicia sesión.", "success");
+                    setTimeout(() => switchTab('login'), 1500);
+                    // Limpiar formulario
+                    e.target.reset();
+                    // Autocompletar el login para facilitar
+                    document.getElementById('login-email').value = data.email;
+                } else {
+                    const errorData = await res.json();
+                    showMsg(`Error: ${errorData.detail || 'No se pudo registrar'}`, "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showMsg("Error de conexión con el servidor (Backend apagado?)", "error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerText = "Verificando...";
+            btn.disabled = true;
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+
+            try {
+                // INTENTO 1: Formato JSON a /veterinarias/login
+                let res = await fetch(`${API_URL}/veterinarias/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                // Si falla con 422 o 405, intentamos el formato "FormData" (OAuth2 estándar)
+                if (res.status === 422 || res.status === 405 || res.status === 404) {
+                    console.log("Intentando Login alternativo (FormData)...");
+                    const formData = new URLSearchParams();
+                    formData.append('username', email); // OAuth2 usa 'username' aunque sea email
+                    formData.append('password', password);
+
+                    // Probamos ruta estándar /login o /token por si acaso
+                    res = await fetch(`${API_URL}/veterinarias/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData
+                    });
+                }
+
+                if (res.ok) {
+                    const data = await res.json();
+                    // Guardar Token
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('vet_email', email); // Guardamos ref visual
+                    showMsg("¡Acceso Correcto! Entrando...", "success");
+                    setTimeout(() => window.location.href = '/dashboard', 1000);
+                } else {
+                    const errorData = await res.json();
+                    showMsg(`Error: ${errorData.detail || 'Credenciales incorrectas'}`, "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showMsg("No se puede conectar al Backend. ¿Está encendido?", "error");
+            } finally {
+                btn.innerText = "ENTRAR AL SISTEMA";
+                btn.disabled = false;
+            }
+        }
+
+        function showMsg(text, type) {
+            const el = document.getElementById('status-msg');
+            el.innerText = text;
+            el.className = `status-msg ${type}`;
+        }
+    </script>
+
+    <style>
+        /* 1. CONFIGURACIÓN BÁSICA Y FONDO */
+        :root { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Fondo oscuro con degradado radial */
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: white;
+        }
+
+        .main-container {
+            width: 100%;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* 2. TARJETA DE CRISTAL (Glassmorphism) */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 3. PESTAÑAS (TABS) SUPERIORES */
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #334155;
+        }
+
+        .tab {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 1rem;
+            color: #94a3b8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            font-size: 1rem;
+            margin-bottom: -2px; /* Para que pise la línea */
+        }
+
+        .tab:hover { color: #e2e8f0; }
+        
+        .tab.active {
+            color: #34d399; /* Verde neon */
+            border-bottom-color: #34d399;
+        }
+
+        /* 4. FORMULARIOS Y TEXTOS */
+        h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.8rem;
+            text-align: center;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .input-group { margin-bottom: 1.25rem; }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: #34d399;
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+        }
+
+        /* 5. BOTONES PERSONALIZADOS (GRADIENTES) */
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: transform 0.2s, opacity 0.2s;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button[type="submit"]:hover { opacity: 0.9; }
+        button[type="submit"]:active { transform: scale(0.98); }
+
+        /* Botón Verde (Login) */
+        .btn-primary {
+            background: linear-gradient(to right, #059669, #10b981);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Botón Morado (Registro) */
+        .btn-secondary {
+            background: linear-gradient(to right, #7c3aed, #8b5cf6);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        /* 6. UTILIDADES Y DECORACIÓN */
+        .hidden { display: none; }
+        
+        .status-msg {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        .success { color: #34d399; background: rgba(52, 211, 153, 0.1); }
+        .error { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+
+        /* Manchas de color de fondo (Blobs) */
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; z-index: 1; }
+        .blob-1 { width: 300px; height: 300px; background: #059669; top: 10%; left: 20%; animation: float 8s infinite; }
+        .blob-2 { width: 300px; height: 300px; background: #7c3aed; bottom: 10%; right: 20%; animation: float 8s infinite reverse; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</body>
+</html>

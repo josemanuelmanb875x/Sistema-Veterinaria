@@ -1,0 +1,219 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API - Veterinaria</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #059669;
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API Veterinaria</h1>
+
+    <div class="section">
+        <h2>1. Login</h2>
+        <input type="email" id="loginEmail" placeholder="Email" value="jefe@vet.com">
+        <input type="password" id="loginPass" placeholder="Password" value="admin123">
+        <button onclick="testLogin()">Login</button>
+    </div>
+
+    <div class="section">
+        <h2>2. Crear Cliente</h2>
+        <input type="text" id="nombreDueno" placeholder="Nombre Dueño" value="Juan Perez">
+        <input type="text" id="telefonoDueno" placeholder="Teléfono" value="8331234567">
+        <input type="email" id="emailDueno" placeholder="Email" value="juan@test.com">
+        <input type="text" id="nombreMascota" placeholder="Nombre Mascota" value="Firulais">
+        <input type="text" id="especie" placeholder="Especie" value="Perro">
+        <input type="text" id="raza" placeholder="Raza" value="Labrador">
+        <input type="number" id="edad" placeholder="Edad" value="3.5" step="0.1">
+        <input type="number" id="peso" placeholder="Peso" value="25.5" step="0.1">
+        <textarea id="notas" placeholder="Notas" rows="3">Vacunas al día</textarea>
+        <button onclick="testCreateCliente()">Crear Cliente</button>
+    </div>
+
+    <div class="section">
+        <h2>3. Obtener Clientes</h2>
+        <button onclick="testGetClientes()">Get Clientes</button>
+    </div>
+
+    <div class="section">
+        <h2>Resultados</h2>
+        <pre id="output">Esperando acciones...</pre>
+    </div>
+
+    <script is:inline>
+        let token = localStorage.getItem('token') || '';
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent = typeof message === 'object' 
+                ? JSON.stringify(message, null, 2) 
+                : message;
+        }
+
+        async function testLogin() {
+            try {
+                const email = document.getElementById('loginEmail').value;
+                const pass = document.getElementById('loginPass').value;
+                
+                const formData = new URLSearchParams();
+                formData.append('username', email);
+                formData.append('password', pass);
+
+                const res = await fetch('http://127.0.0.1:8000/veterinarias/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                
+                if (res.ok) {
+                    token = data.access_token;
+                    localStorage.setItem('token', token);
+                    log({
+                        status: 'SUCCESS',
+                        message: 'Login exitoso',
+                        token: token.substring(0, 30) + '...'
+                    });
+                } else {
+                    log({ status: 'ERROR', data });
+                }
+            } catch (error) {
+                log({ status: 'ERROR', message: error.message });
+            }
+        }
+
+        async function testCreateCliente() {
+            try {
+                if (!token) {
+                    log({ status: 'ERROR', message: 'Primero debes hacer login' });
+                    return;
+                }
+
+                const cliente = {
+                    nombre_dueno: document.getElementById('nombreDueno').value,
+                    telefono_dueno: document.getElementById('telefonoDueno').value,
+                    email_dueno: document.getElementById('emailDueno').value,
+                    direccion_dueno: 'Calle 123',
+                    nombre_mascota: document.getElementById('nombreMascota').value,
+                    especie: document.getElementById('especie').value,
+                    raza: document.getElementById('raza').value,
+                    edad: parseFloat(document.getElementById('edad').value) || null,
+                    peso: parseFloat(document.getElementById('peso').value) || null,
+                    notas: document.getElementById('notas').value || null
+                };
+
+                log({ status: 'ENVIANDO', cliente });
+
+                const res = await fetch('http://127.0.0.1:8000/clientes', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(cliente)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    log({
+                        status: 'SUCCESS',
+                        message: 'Cliente creado exitosamente',
+                        cliente: data
+                    });
+                } else {
+                    log({ status: 'ERROR', statusCode: res.status, data });
+                }
+            } catch (error) {
+                log({ status: 'ERROR', message: error.message });
+            }
+        }
+
+        async function testGetClientes() {
+            try {
+                if (!token) {
+                    log({ status: 'ERROR', message: 'Primero debes hacer login' });
+                    return;
+                }
+
+                const res = await fetch('http://127.0.0.1:8000/clientes', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    log({
+                        status: 'SUCCESS',
+                        total: data.length,
+                        clientes: data
+                    });
+                } else {
+                    log({ status: 'ERROR', statusCode: res.status, data });
+                }
+            } catch (error) {
+                log({ status: 'ERROR', message: error.message });
+            }
+        }
+
+        // Mostrar token actual si existe
+        if (token) {
+            log({
+                status: 'INFO',
+                message: 'Token encontrado en localStorage',
+                token: token.substring(0, 30) + '...'
+            });
+        }
+    </script>
+</body>
+</html>

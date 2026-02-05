@@ -1,0 +1,459 @@
+---
+// src/pages/registro.astro
+---
+
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Registro - Veterinaria</title>
+</head>
+<body>
+    <div class="main-container">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+
+        <div class="glass-card">
+            <div class="tabs">
+                <button id="tab-login" class="tab" onclick="switchTab('login')">Iniciar Sesión</button>
+                <button id="tab-register" class="tab active" onclick="switchTab('register')">Registrarse</button>
+            </div>
+
+            <div id="form-login" class="form-section hidden">
+                <h2>Bienvenido de nuevo</h2>
+                <p class="subtitle">Gestiona tus pacientes de forma segura</p>
+                
+                <form onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="login-email" placeholder="admin@vet.com" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="login-pass" placeholder="••••••••" required />
+                    </div>
+                    <button type="submit" class="btn-primary">ENTRAR AL SISTEMA</button>
+                </form>
+            </div>
+
+            <div id="form-register" class="form-section">
+                <h2>Crea tu cuenta</h2>
+                <p class="subtitle">Registra tu veterinaria en segundos</p>
+                
+                <form onsubmit="handleRegister(event)">
+                    <div class="input-group">
+                        <label>Nombre de la Clínica <span style="color: #94a3b8; font-weight: 400;">(mínimo 3 caracteres)</span></label>
+                        <input type="text" id="reg-nombre" placeholder="Ej. Vet Patitas" required minlength="3" />
+                        <small id="nombreError" class="error-msg"></small>
+                    </div>
+                    <div class="input-group">
+                        <label>Teléfono <span style="color: #94a3b8; font-weight: 400;">(10 dígitos)</span></label>
+                        <input type="text" id="reg-tel" placeholder="833 123 4567" required maxlength="10" />
+                        <small id="telefonoError" class="error-msg"></small>
+                    </div>
+                    <div class="input-group">
+                        <label>Dirección <span style="color: #94a3b8; font-weight: 400;">(calle, número, colonia)</span></label>
+                        <input type="text" id="reg-dir" placeholder="Av. Hidalgo #123" required />
+                    </div>
+                    <div class="input-group">
+                        <label>Correo Electrónico <span style="color: #94a3b8; font-weight: 400;">(@gmail, @outlook, etc.)</span></label>
+                        <input type="email" id="reg-email" placeholder="admin@vet.com" required />
+                        <small id="emailError" class="error-msg"></small>
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña <span style="color: #94a3b8; font-weight: 400;">(mínimo 6 caracteres)</span></label>
+                        <input type="password" id="reg-pass" placeholder="Crea una contraseña segura" required minlength="6" />
+                        <small id="passwordError" class="error-msg"></small>
+                    </div>
+                    <button type="submit" class="btn-secondary">REGISTRAR CLÍNICA</button>
+                </form>
+            </div>
+
+            <p id="status-msg" class="status-msg"></p>
+        </div>
+    </div>
+
+    <script is:inline>
+        const API_URL = "http://127.0.0.1:8000";
+
+        // Referencias a elementos de validación
+        const telefonoInput = document.getElementById('reg-tel');
+        const telefonoError = document.getElementById('telefonoError');
+        const nombreInput = document.getElementById('reg-nombre');
+        const nombreError = document.getElementById('nombreError');
+        const emailInput = document.getElementById('reg-email');
+        const emailError = document.getElementById('emailError');
+        const passwordInput = document.getElementById('reg-pass');
+        const passwordError = document.getElementById('passwordError');
+
+        // Dominios de email permitidos
+        const dominiosValidos = ['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'live.com', 'icloud.com'];
+
+        function switchTab(mode) {
+            document.getElementById('status-msg').innerText = '';
+            document.getElementById('status-msg').className = 'status-msg';
+
+            if (mode === 'login') {
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('form-register').classList.add('hidden');
+                document.getElementById('tab-login').classList.add('active');
+                document.getElementById('tab-register').classList.remove('active');
+            } else {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-register').classList.remove('hidden');
+                document.getElementById('tab-login').classList.remove('active');
+                document.getElementById('tab-register').classList.add('active');
+            }
+        }
+
+        // Validación de teléfono en tiempo real
+        telefonoInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            
+            if (e.target.value.length > 0 && e.target.value.length < 10) {
+                telefonoError.textContent = `Faltan ${10 - e.target.value.length} dígitos`;
+                telefonoError.style.display = 'block';
+                e.target.style.borderColor = '#f87171';
+            } else if (e.target.value.length === 10) {
+                telefonoError.style.display = 'none';
+                e.target.style.borderColor = '#34d399';
+            } else {
+                telefonoError.style.display = 'none';
+                e.target.style.borderColor = '#334155';
+            }
+        });
+
+        // Validación de nombre
+        nombreInput.addEventListener('blur', (e) => {
+            const valor = e.target.value.trim();
+            if (valor.length > 0 && valor.length < 3) {
+                nombreError.textContent = 'Debe tener al menos 3 caracteres';
+                nombreError.style.display = 'block';
+                e.target.style.borderColor = '#f87171';
+            } else if (valor.length >= 3) {
+                nombreError.style.display = 'none';
+                e.target.style.borderColor = '#34d399';
+            }
+        });
+
+        // Validación de email con dominios permitidos
+        emailInput.addEventListener('blur', (e) => {
+            const email = e.target.value.trim();
+            if (email.includes('@')) {
+                const dominio = email.split('@')[1];
+                const esValido = dominiosValidos.includes(dominio);
+                
+                if (!esValido) {
+                    emailError.textContent = 'Usa un dominio válido como @gmail.com, @outlook.com';
+                    emailError.style.display = 'block';
+                    e.target.style.borderColor = '#f87171';
+                } else {
+                    emailError.style.display = 'none';
+                    e.target.style.borderColor = '#34d399';
+                }
+            }
+        });
+
+        // Validación de contraseña
+        passwordInput.addEventListener('input', (e) => {
+            if (e.target.value.length > 0 && e.target.value.length < 6) {
+                passwordError.textContent = `Faltan ${6 - e.target.value.length} caracteres`;
+                passwordError.style.display = 'block';
+                e.target.style.borderColor = '#f87171';
+            } else if (e.target.value.length >= 6) {
+                passwordError.style.display = 'none';
+                e.target.style.borderColor = '#34d399';
+            }
+        });
+
+        async function handleRegister(e) {
+            e.preventDefault();
+
+            // Validaciones pre-submit
+            if (telefonoInput.value.length !== 10) {
+                telefonoError.textContent = 'El teléfono debe tener 10 dígitos';
+                telefonoError.style.display = 'block';
+                telefonoInput.focus();
+                return;
+            }
+
+            if (nombreInput.value.trim().length < 3) {
+                nombreError.textContent = 'El nombre es muy corto';
+                nombreError.style.display = 'block';
+                nombreInput.focus();
+                return;
+            }
+
+            const email = emailInput.value.trim();
+            if (email.includes('@')) {
+                const dominio = email.split('@')[1];
+                if (!dominiosValidos.includes(dominio)) {
+                    emailError.textContent = 'Usa un dominio válido como @gmail.com, @outlook.com';
+                    emailError.style.display = 'block';
+                    emailInput.focus();
+                    return;
+                }
+            }
+
+            if (passwordInput.value.length < 6) {
+                passwordError.textContent = 'La contraseña es muy corta';
+                passwordError.style.display = 'block';
+                passwordInput.focus();
+                return;
+            }
+
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Registrando...";
+            btn.disabled = true;
+
+            const data = {
+                nombre: nombreInput.value,
+                telefono: telefonoInput.value,
+                direccion: document.getElementById('reg-dir').value,
+                email: emailInput.value,
+                password: passwordInput.value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/veterinarias/registro`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    showMsg("¡Registro exitoso! Ahora inicia sesión.", "success");
+                    setTimeout(() => switchTab('login'), 1500);
+                    e.target.reset();
+                    document.getElementById('login-email').value = data.email;
+                } else {
+                    const errorData = await res.json();
+                    showMsg(`Error: ${errorData.detail || 'No se pudo registrar'}`, "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showMsg("Error de conexión con el servidor", "error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerText = "Verificando...";
+            btn.disabled = true;
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+
+            try {
+                let res = await fetch(`${API_URL}/veterinarias/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (res.status === 422 || res.status === 405 || res.status === 404) {
+                    const formData = new URLSearchParams();
+                    formData.append('username', email);
+                    formData.append('password', password);
+
+                    res = await fetch(`${API_URL}/veterinarias/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData
+                    });
+                }
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('vet_email', email);
+                    showMsg("¡Acceso Correcto! Entrando...", "success");
+                    setTimeout(() => window.location.href = '/dashboard', 1000);
+                } else {
+                    const errorData = await res.json();
+                    showMsg(`Error: ${errorData.detail || 'Credenciales incorrectas'}`, "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showMsg("No se puede conectar al Backend. ¿Está encendido?", "error");
+            } finally {
+                btn.innerText = "ENTRAR AL SISTEMA";
+                btn.disabled = false;
+            }
+        }
+
+        function showMsg(text, type) {
+            const el = document.getElementById('status-msg');
+            el.innerText = text;
+            el.className = `status-msg ${type}`;
+        }
+    </script>
+
+    <style>
+        :root { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: white;
+        }
+
+        .main-container {
+            width: 100%;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #334155;
+        }
+
+        .tab {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 1rem;
+            color: #94a3b8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            font-size: 1rem;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover { color: #e2e8f0; }
+        
+        .tab.active {
+            color: #34d399;
+            border-bottom-color: #34d399;
+        }
+
+        h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.8rem;
+            text-align: center;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .input-group { margin-bottom: 1.25rem; }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: #34d399;
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+        }
+
+        .error-msg {
+            display: none;
+            color: #f87171;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: transform 0.2s, opacity 0.2s;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button[type="submit"]:hover { opacity: 0.9; }
+        button[type="submit"]:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: linear-gradient(to right, #059669, #10b981);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(to right, #7c3aed, #8b5cf6);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .hidden { display: none; }
+        
+        .status-msg {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        .success { color: #34d399; background: rgba(52, 211, 153, 0.1); }
+        .error { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; z-index: 1; }
+        .blob-1 { width: 300px; height: 300px; background: #059669; top: 10%; left: 20%; animation: float 8s infinite; }
+        .blob-2 { width: 300px; height: 300px; background: #7c3aed; bottom: 10%; right: 20%; animation: float 8s infinite reverse; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</body>
+</html>
